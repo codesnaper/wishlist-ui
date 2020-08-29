@@ -2,6 +2,7 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from './../components/Home';
 import Share from './../components/ShareWish';
+import Wish from './../components/Wish';
 
 Vue.use(VueRouter)
 
@@ -23,6 +24,11 @@ Vue.use(VueRouter)
     path: '/share',
     name: 'Share',
     component: Share,
+  },
+  {
+    path: '/wish',
+    name: 'wish',
+    component: Wish,
   }
 ]
 
