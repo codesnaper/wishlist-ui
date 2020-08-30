@@ -1,5 +1,6 @@
 <template>
-  <v-app id="inspire">
+  <section class="application" >
+  <v-app id="home">
     <v-navigation-drawer
       v-model="drawer"
       :clipped="$vuetify.breakpoint.lgAndUp"
@@ -86,25 +87,40 @@
         class="ml-0 pl-4"
       >
         <span class="hidden-sm-and-down">WishList</span>
+        <v-list class="greet-list">
+      <v-list-item v-if="user.name === undefined" style="padding:0">
+          <v-list-item-avatar>
+            <v-img src="https://cdn.vuetifyjs.com/images/logos/logo.svg"></v-img>
+          </v-list-item-avatar>
+
+          <v-list-item-content>
+            <v-list-item-title >Welcome</v-list-item-title>
+            <v-list-item-subtitle>Guest</v-list-item-subtitle>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item v-if="this.user.name !== undefined" style="padding:0">
+          <v-list-item-avatar color="indigo">
+            <span class="white--text headline">{{'  '+user.name.split('')[0].toUpperCase()}}</span>
+          </v-list-item-avatar>
+
+          <v-list-item-content>
+            <v-list-item-title >Welcome</v-list-item-title>
+            <v-list-item-subtitle>{{user.name}}</v-list-item-subtitle>
+          </v-list-item-content>
+        </v-list-item>
+    </v-list>
       </v-toolbar-title>
       <v-spacer></v-spacer>
       <v-btn id="menu-icon"
         icon
         large
       >
-        <v-avatar
-          size="32px"
-          item
-        >
-          <v-img
-            src="https://cdn.vuetifyjs.com/images/logos/logo.svg"
-            alt="Vuetify"
-          ></v-img></v-avatar>
+    
       </v-btn>
     </v-app-bar>
     <v-main>
       <v-container fluid
-        class="fill-height home-main"        
+        class=" home-main"        
       >
         
           <router-view></router-view>
@@ -116,6 +132,7 @@
     </v-main>
     
   </v-app>
+  </section>
 </template>
 
 <script>
@@ -126,39 +143,32 @@
     data: () => ({
       dialog: false,
       drawer: null,
+      user:{},
       items: [
-        { icon: 'mdi-contacts', text: 'Contacts' },
-        { icon: 'mdi-history', text: 'Frequently contacted' },
-        { icon: 'mdi-content-copy', text: 'Duplicates' },
-        {
-          icon: 'mdi-chevron-up',
-          'icon-alt': 'mdi-chevron-down',
-          text: 'Labels',
-          model: true,
-          children: [
-            { icon: 'mdi-plus', text: 'Create label' },
-          ],
-        },
-        {
-          icon: 'mdi-chevron-up',
-          'icon-alt': 'mdi-chevron-down',
-          text: 'More',
-          model: false,
-          children: [
-            { text: 'Import' },
-            { text: 'Export' },
-            { text: 'Print' },
-            { text: 'Undo changes' },
-            { text: 'Other contacts' },
-          ],
-        },
-        { icon: 'mdi-cog', text: 'Settings' },
-        { icon: 'mdi-message', text: 'Send feedback' },
-        { icon: 'mdi-help-circle', text: 'Help' },
-        { icon: 'mdi-cellphone-link', text: 'App downloads' },
-        { icon: 'mdi-keyboard', text: 'Go to the old version' },
+        { icon: 'mdi-contacts', text: 'Event' },
+        { icon: 'mdi-history', text: 'Wish' },
+        { icon: 'mdi-content-copy', text: 'Dashboard' },
+        // {
+        //   icon: 'mdi-chevron-up',
+        //   'icon-alt': 'mdi-chevron-down',
+        //   text: 'More',
+        //   model: false,
+        //   children: [
+        //     { text: 'Import' },
+        //     { text: 'Export' },
+        //     { text: 'Print' },
+        //     { text: 'Undo changes' },
+        //     { text: 'Other contacts' },
+        //   ],
+        // },
+     
       ],
     }),
+    created(){
+      if(this.$cookie.get('anonymousUser')){
+        this.user = JSON.parse(this.$cookie.get('anonymousUser'));
+      }
+    }
   }
 </script>
 <style scoped>
@@ -170,5 +180,16 @@
     background-position: center top;
     background-attachment: fixed; */
      
+ }
+
+ .greet-list{
+   background: transparent !important;
+   position: absolute;
+    top: 0;
+    right: 0;
+ }
+
+ .v-list-item__content{
+   padding: 0;
  }
 </style>

@@ -3,6 +3,7 @@ import VueRouter from 'vue-router'
 import Home from './../components/Home';
 import Share from './../components/ShareWish';
 import Wish from './../components/Wish';
+import Login from './../components/login';
 
 Vue.use(VueRouter)
 
@@ -11,6 +12,11 @@ Vue.use(VueRouter)
     path: '/',
     name: 'Home',
     component: Home
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: Login,
   },
   {
     path: '/about',
