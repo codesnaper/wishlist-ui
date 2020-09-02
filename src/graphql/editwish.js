@@ -1,7 +1,7 @@
 const updateWish = `
-mutation updateWish($id: ID,$wish: String, $amount: Int , $eventId:String ){
+mutation updateWish($id: ID!,$wish: String, $amount: Int , $eventId:String ){
     updateWish(
-        _id:$id,
+        id:$id,
         wish:$wish,
         amount:$amount,
         eventId:$eventId,

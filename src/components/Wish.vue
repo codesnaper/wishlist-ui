@@ -179,10 +179,13 @@
 </template>
 
 <script>
+import { Auth } from "aws-amplify";
+
 import { graphqlEventId } from '../graphql/event'
 import { addWishGrpahql, addWishParam } from '../graphql/addWish';
 import { updateWishGrpahql,updateWishParam } from '../graphql/editwish';
 import { deleteWishGrpahql,deleteWishParam } from '../graphql/deletewish';
+import { graphQL } from "./../awsConfig/garphql";
   export default {
     name: 'Wish',
 
@@ -197,10 +200,13 @@ import { deleteWishGrpahql,deleteWishParam } from '../graphql/deletewish';
     }),
     methods:{
         initialize () {
-        let variable = {_id:this.id};
-        fetch('http://localhost:3000/graphql?query='+graphqlEventId+'&variables='+JSON.stringify(variable))
-        .then(response => response.json())
-        .then(data => {
+        
+        Auth.currentAuthenticatedUser().then(data=>{
+          let auth = data.signInUserSession.accessToken.jwtToken;
+          let variable = {_id:this.id};
+          graphQL(graphqlEventId,variable,null,auth)
+          .then(response => response.json())
+          .then(data => {
             console.log(JSON.stringify(data))
             this.totalWish = data.data.event.wish.length;
             this.eventName = data.data.event.name;
@@ -216,8 +222,15 @@ import { deleteWishGrpahql,deleteWishParam } from '../graphql/deletewish';
                     obj.fulfillAmount+=element.amount;
                 });
                 return obj;
-            });
-        })
+                });
+            })  
+            }).catch(err=>{
+                console.log('User is not authenticated'+err);
+                Auth.signOut();
+                this.$router.push({
+                    path: '/login'
+                });
+            })
         },
         editItem:function(id,card){
             this.editWish = card;
@@ -225,22 +238,28 @@ import { deleteWishGrpahql,deleteWishParam } from '../graphql/deletewish';
             document.getElementById('wish-edit-'+card.id).classList.remove('d-none');
         },
         submitEditWish(id,card){
-             let bodyData = {query:updateWishGrpahql,variables: updateWishParam(this.editWish.id,this.editWish.wish,this.editWish.amount,this.id)  }
-            fetch('http://localhost:3000/graphql', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json;charset=utf-8'
-                },
-                body: JSON.stringify(bodyData)
+            Auth.currentAuthenticatedUser().then(data=>{
+                let auth = data.signInUserSession.accessToken.jwtToken;
+                let bodyData = updateWishParam(this.editWish.id,this.editWish.wish,this.editWish.amount,this.id);
+                graphQL(updateWishGrpahql,bodyData,undefined,auth)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    this.cardAddInput = false;
+                    document.getElementById(id).classList.remove('d-none');
+                    document.getElementById('wish-edit-'+card.id).classList.add('d-none');
+                    this.initialize();
+                });
+
+            })            
+            .catch(err=>{
+                console.log('User is not authenticated'+err);
+                Auth.signOut();
+                this.$router.push({
+                    path: '/login'
+                });
             })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                this.cardAddInput = false;
-                document.getElementById(id).classList.remove('d-none');
-                document.getElementById('wish-edit-'+card.id).classList.add('d-none');
-                this.initialize();
-            });
+            
             
             
         },
@@ -250,19 +269,23 @@ import { deleteWishGrpahql,deleteWishParam } from '../graphql/deletewish';
         },
         deleteWish(card){
             if(confirm('Do you want to delete the wish')){
-            let bodyData = {query:deleteWishGrpahql,variables: deleteWishParam(card.id)  }
-            fetch('http://localhost:3000/graphql', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json;charset=utf-8'
-                },
-                body: JSON.stringify(bodyData)
+            Auth.currentAuthenticatedUser().then(data=>{
+                let auth = data.signInUserSession.accessToken.jwtToken;
+                let bodyData = deleteWishParam(card.id);
+                graphQL(deleteWishGrpahql,bodyData,undefined,auth)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                     this.initialize();
+                });
+            }) 
+            .catch(err=>{
+                console.log('User is not authenticated'+err);
+                Auth.signOut();
+                this.$router.push({
+                    path: '/login'
+                });
             })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                this.initialize();
-            });
             }
         },
         addWish:function(){
@@ -272,23 +295,32 @@ import { deleteWishGrpahql,deleteWishParam } from '../graphql/deletewish';
             this.cardAddInput = false;
         },
         save:function(){
-            this.newWish.eventId = this.id;
-             let bodyData = {query:addWishGrpahql,variables: addWishParam(this.newWish.wish,this.newWish.amount,this.newWish.eventId)  }
-            fetch('http://localhost:3000/graphql', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json;charset=utf-8'
-                },
-                body: JSON.stringify(bodyData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                this.cardAddInput = false;
-                this.newWish = {};
-                this.initialize();  
+            Auth.currentAuthenticatedUser()
+            .then(data=>{
+                
+                let auth = data.signInUserSession.accessToken.jwtToken;
+                let param = addWishParam(this.newWish.wish,this.newWish.amount,this.id);
+                let query = addWishGrpahql;
+                graphQL(query,param,undefined,auth)
+                .then(response => response.json())
+                .then(data => {
+                    this.cardAddInput = false;
+                    this.newWish = {};
+                    let newCard = data.data.createWish;
+                    newCard.participant = 0;
+                    newCard.fulfillAmount = 0;
+                    this.cards.push(newCard)
 
-            });
+                });
+
+            }).catch(err=>{
+                console.log('User is not authenticated'+err);
+                Auth.signOut();
+                this.$router.push({
+                    path: '/login'
+                });
+            })
+          
             
         }
     },

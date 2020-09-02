@@ -1,7 +1,7 @@
 const deleteWish = `
-mutation deleteWish($id: ID){
+mutation deleteWish($id: ID!){
     deleteWish(
-        _id:$id,
+        id:$id,
     ){
         id
         wish

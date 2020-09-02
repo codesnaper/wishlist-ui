@@ -4,6 +4,7 @@ import Home from './../components/Home';
 import Share from './../components/ShareWish';
 import Wish from './../components/Wish';
 import Login from './../components/login';
+import { Auth } from "aws-amplify";
 
 Vue.use(VueRouter)
 
@@ -11,20 +12,15 @@ Vue.use(VueRouter)
   {
     path: '/',
     name: 'Home',
-    component: Home
+    component: Home,
+    meta: {
+      requiresAuth: true
+    }
   },
   {
     path: '/login',
     name: 'Login',
     component: Login,
-  },
-  {
-    path: '/about',
-    name: 'About',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/About.vue')
   },
   {
     path: '/share',
@@ -35,11 +31,37 @@ Vue.use(VueRouter)
     path: '/wish',
     name: 'wish',
     component: Wish,
+    meta: {
+      requiresAuth: true
+    }
   }
 ]
 
 const router = new VueRouter({
   routes
 })
+
+router.beforeEach((to, from, next) => {
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    //con
+    Auth.currentAuthenticatedUser().then(data=>{
+      console.log(data);
+      next();
+    }).catch(err=>{
+      console.error(err);
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      });
+    })
+  } else {
+    next() // make sure to always call next()!
+  }
+})
+
+router.afterEach(() => {
+  console.log('DOne ')
+
+});
 
 export default router

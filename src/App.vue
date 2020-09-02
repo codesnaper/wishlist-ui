@@ -36,11 +36,15 @@
             append-icon=""
           >
             <template v-slot:activator>
+              
               <v-list-item-content>
                 <v-list-item-title>
-                  {{ item.text }}
+                  <router-link :to="item.route">
+                  {{ item.text +''+item.route}}
+                  </router-link>
                 </v-list-item-title>
               </v-list-item-content>
+              
             </template>
             <v-list-item
               v-for="(child, i) in item.children"
@@ -136,6 +140,7 @@
 </template>
 
 <script>
+  import { Auth } from "aws-amplify";
   export default {
     props: {
       source: String,
@@ -145,9 +150,9 @@
       drawer: null,
       user:{},
       items: [
-        { icon: 'mdi-contacts', text: 'Event' },
-        { icon: 'mdi-history', text: 'Wish' },
-        { icon: 'mdi-content-copy', text: 'Dashboard' },
+        { icon: 'mdi-contacts', text: 'Event', route: '/' },
+        { icon: 'mdi-content-copy', text: 'Dashboard', route: '/dashboard' },
+        { icon: 'mdi-history', text: 'Logout' ,route: '/logout'}
         // {
         //   icon: 'mdi-chevron-up',
         //   'icon-alt': 'mdi-chevron-down',
@@ -165,8 +170,14 @@
       ],
     }),
     created(){
-      if(this.$cookie.get('anonymousUser')){
-        this.user = JSON.parse(this.$cookie.get('anonymousUser'));
+      Auth.currentAuthenticatedUser().then(data=>{
+        this.user.name= data.signInUserSession.idToken.payload.name;
+        
+      })
+    },
+    methods:{
+      logout(){
+        alert('logout')
       }
     }
   }

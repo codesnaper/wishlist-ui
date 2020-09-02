@@ -2,6 +2,7 @@
     <v-row align="stretch" justify="space-around">
 
          <v-container   class="fill-height">
+
              <v-row align="center" justify="center">
                  
                     <v-col cols="12" >
@@ -133,11 +134,14 @@
 </template>
 
 <script>
+import { Auth } from "aws-amplify";
+
 const moment = require('moment');
 import { grahqlEventUserId } from '../graphql/event'
 import { addEventGraphQL, addEventParam} from '../graphql/addEvent';
 import { editEventGrahql, editEventParam} from '../graphql/editEvent';
 import { deleteEventGraphql, deleteEventParam} from '../graphql/deleteEvent';
+import { graphQL } from "./../awsConfig/garphql";
   export default {
     name: 'Home',
 
@@ -218,14 +222,17 @@ import { deleteEventGraphql, deleteEventParam} from '../graphql/deleteEvent';
         },
 
       initialize () {
-        let variable = {_userId:'5f4a693d65c79db4dc0c76f0'};
-        fetch('http://localhost:3000/graphql?query='+grahqlEventUserId+'&variables='+JSON.stringify(variable))
-        .then(response => response.json())
-        .then(data => {
+        Auth.currentAuthenticatedUser().then(data=>{
+          let auth = data.signInUserSession.accessToken.jwtToken;
+          let userId = data.attributes.sub;
+          let variable = {_userId: userId};
+          graphQL(grahqlEventUserId,variable,null,auth)
+          .then(response => response.json())
+          .then(data=>{
             console.log(JSON.stringify(data))
             this.desserts = data.data.eventUserId.map(item=>{
                 let obj = {};
-                obj._id = item._id;
+                obj._id = item.id;
                 obj.name = item.name;
                 obj.endDate = item.endDate;
                 obj.totalWish = item.wish.length;
@@ -235,17 +242,19 @@ import { deleteEventGraphql, deleteEventParam} from '../graphql/deleteEvent';
                 });
                 obj.participant = participant;
                 obj.status= "Active";
-                obj.sharableLink = document.location.href+'share?id='+item._id
+                obj.sharableLink = document.location.href+'share?id='+item.id
                 obj.accessCode = item.code;
                 return obj;
             });
             this.duplicateList = this.desserts;
-           
-        })
-        .catch(err=>{
+          })
+          .catch(err=>{
             console.error(err);
-        })
-        
+          })
+        }).catch(err=>{
+          console.log('User is not authenticated'+err);
+          Auth.signOut();
+        })       
         
       },
         
@@ -254,28 +263,26 @@ import { deleteEventGraphql, deleteEventParam} from '../graphql/deleteEvent';
         this.editedIndex = this.desserts.indexOf(item)
         this.editedItem = Object.assign({}, item);            
         this.editedItem.endDate = moment(this.editedItem.endDate, "x").format(' MMMM DD YYYY');
-        alert(JSON.stringify(this.editedItem));
-
         this.dialog = true
       },
 
       deleteItem (item) {
         if(confirm('Are you sure you want to delete this item?')){
-            let bodyData = {query:deleteEventGraphql,variables: deleteEventParam(item._id)  }
-            console.log(JSON.stringify(bodyData))
-            fetch('http://localhost:3000/graphql', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json;charset=utf-8'
-                },
-                body: JSON.stringify(bodyData)
-            })
+          Auth.currentAuthenticatedUser().then(data=>{
+            let bodyData =  deleteEventParam(item._id) ;
+            let auth = data.signInUserSession.accessToken.jwtToken;
+            graphQL(deleteEventGraphql,bodyData,undefined,auth)
             .then(response => response.json())
             .then(data=>{
                 console.log(data);
                 this.initialize();
                 this.close();
             })
+          })
+          .catch(err=>{
+            console.log('User is not authenticated'+err);
+            Auth.signOut();
+          })
         }
       },
 
@@ -286,31 +293,36 @@ import { deleteEventGraphql, deleteEventParam} from '../graphql/deleteEvent';
       },
 
       save () {
-          let query ;
+        Auth.currentAuthenticatedUser()
+        .then(data=>{
+          let auth = data.signInUserSession.accessToken.jwtToken;
+          let userId = data.attributes.sub;
           let param ;
+          let query ;
           if(this.editedIndex !== -1){
               query = editEventGrahql;
-              param = editEventParam(this.editedItem._id,this.editedItem.name,moment(this.editedItem.endDate).format(),'5f4a693d65c79db4dc0c76f0',this.editedItem.accessCode)
+              param = editEventParam(this.editedItem._id,this.editedItem.name,moment(this.editedItem.endDate).format(),userId,this.editedItem.accessCode)
           } else{
               query = addEventGraphQL;
-              param = addEventParam(this.editedItem.name,moment(this.editedItem.endDate).format(),'5f4a693d65c79db4dc0c76f0',this.editedItem.accessCode)
+              param = addEventParam(this.editedItem.name,moment(this.editedItem.endDate).format(),userId,this.editedItem.accessCode)
           }
-        let bodyData = {query:query,variables: param  }
-        fetch('http://localhost:3000/graphql', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json;charset=utf-8'
-            },
-            body: JSON.stringify(bodyData)
-        })
-        .then(response => response.json())
-        .then(data => {
+          graphQL(query,param,undefined,auth)
+          .then(response => response.json())
+          .then(data => {
             console.log(data);
             this.initialize();
             this.editedItem = {};
             this.editedItem.accessCode = Math.floor(1000 + Math.random() * 9000)
             this.close();
         });
+        })
+        .catch(err=>{
+          console.log('User is not authenticated'+err);
+          Auth.signOut();
+        });
+
+
+        
         
         
       },

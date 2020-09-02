@@ -1,8 +1,8 @@
 const event = `
-query event($_id: String){
+query event($_id: ID!){
     event(id:$_id){
       name
-      _id
+      id
       endDate
       code
       wish{
@@ -23,9 +23,9 @@ query event($_id: String){
 `;
 
 const eventUserid=`
-query eventUserId($_userId: String){
+query eventUserId($_userId: String!){
     eventUserId(userId:$_userId){
-      _id
+      id
       endDate
       name
       code

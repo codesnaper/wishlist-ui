@@ -1,5 +1,5 @@
 const addEvent = `
-mutation createNewEvent($name: String, $endDate: DateTime , $userId:String , $code:Int){
+mutation createNewEvent($name: String, $endDate: String , $userId:String , $code:Int){
     createEvent(
       name:$name,
       endDate:$endDate,

@@ -1,5 +1,29 @@
 <template>
 <div>
+    <v-alert
+      dense
+      type="error" class="alert-danger d-none" id="danger"
+    >
+      <v-row align="center">
+        <v-col class="grow">{{errorMessage}}</v-col>
+        <v-col class="shrink">
+          <v-btn @click="close('danger')"> Close</v-btn>
+        </v-col>
+      </v-row>
+    </v-alert>
+
+    <v-alert
+      dense
+      type="success" class="alert-danger d-none" id="success"
+    >
+      <v-row align="center">
+        <v-col class="grow">{{successMessage}}</v-col>
+        <v-col class="shrink">
+          <v-btn @click="close('success')"> Close</v-btn>
+        </v-col>
+      </v-row>
+    </v-alert>
+
  <v-overlay value=true class="overlay-background"></v-overlay>
  <v-dialog v-model="dialog" persistent max-width="600px" min-width="360px">
             <div>
@@ -27,7 +51,8 @@
                                         </v-col>
                                         <v-spacer></v-spacer>
                                         <v-col class="d-flex" cols="12" sm="3" xsm="12" align-end>
-                                            <v-btn x-large block :disabled="!valid" color="success" @click="validate"> Login </v-btn>
+                                            <v-btn id="registerButton" x-large block :disabled="!valid" color="success" @click="signin"> Login </v-btn>
+                                            <v-progress-circular id="registerLoader" class="d-none" :size="50" color="primary" indeterminate ></v-progress-circular>
                                         </v-col>
                                     </v-row>
                                 </v-form>
@@ -56,7 +81,8 @@
                                         </v-col>
                                         <v-spacer></v-spacer>
                                         <v-col class="d-flex ml-auto" cols="12" sm="3" xsm="12">
-                                            <v-btn x-large block :disabled="!valid" color="success" @click="validate">Register</v-btn>
+                                                <v-progress-circular id="registerLoader" class="d-none" :size="50" color="primary" indeterminate ></v-progress-circular>
+                                            <v-btn x-large id="registerButton" block :disabled="!valid" color="success" @click="validate">Register</v-btn>
                                         </v-col>
                                     </v-row>
                                 </v-form>
@@ -70,6 +96,7 @@
 </template>
 
 <script>
+import { Auth } from "aws-amplify";
 export default {
   name: 'Login',
   computed: {
@@ -77,11 +104,63 @@ export default {
       return () => this.password === this.verify || "Password must match";
     }
   },
+  created: async function(){
+    await Auth.signOut()
+  },
   methods: {
+      signin(){    
+        
+        document.getElementById('registerButton').classList.add('d-none');
+        document.getElementById('registerLoader').classList.remove('d-none');  
+              Auth.signIn(this.loginEmail,this.loginPassword).then(()=>{
+                document.getElementById('registerButton').classList.remove('d-none');
+                document.getElementById('registerLoader').classList.add('d-none');
+                let path = this.$route.query['redirect'];
+                if(path === undefined){
+                  path = "/"
+                }
+                this.$router.push({
+                    path: path
+                });
+              }).catch(err=>{
+                this.errorMessage = err.message;
+                console.error(err);
+                document.getElementById('danger').classList.remove('d-none');
+                document.getElementById('registerButton').classList.remove('d-none');
+                document.getElementById('registerLoader').classList.add('d-none');
+              })
+              
+          
+      },
+      close(id){
+          document.getElementById(id).classList.add('d-none');
+      },
     validate() {
-      if (this.$refs.loginForm.validate()) {
-        // submit form to server/API here...
-      }
+        document.getElementById('registerButton').classList.add('d-none');
+        document.getElementById('registerLoader').classList.remove('d-none');
+       Auth.signUp({
+            username:this.email,
+            password:this.password,
+            attributes:{
+                email:this.email,
+                name: this.firstName+' '+this.lastName,
+            }
+        }).then(data=>{
+            console.log(JSON.stringify(data));
+            document.getElementById('success').classList.remove('d-none');
+            // Auth.confirmSignUp(this.email).then(()=>{
+                
+            // })
+            this.successMessage = "Welcome. You are successfully regstered with us."
+            document.getElementById('registerButton').classList.remove('d-none');
+            document.getElementById('registerLoader').classList.add('d-none');
+        }).catch(err=>{
+            this.errorMessage = err.message;
+            console.error(err);
+            document.getElementById('danger').classList.remove('d-none');
+            document.getElementById('registerButton').classList.remove('d-none');
+            document.getElementById('registerLoader').classList.add('d-none');
+        });
     },
     reset() {
       this.$refs.form.reset();
@@ -101,7 +180,9 @@ export default {
     
     firstName: "",
     lastName: "",
+    successMessage:"",
     email: "",
+    errorMessage:"",
     password: "",
     verify: "",
     loginPassword: "",
@@ -130,5 +211,16 @@ export default {
     background-repeat: no-repeat;
     background-size: 100% auto;
 
+}
+.alert-danger{
+    position: absolute !important;
+    z-index: 999;
+    right: 50vw;
+    bottom: 0 !important;
+    right: 0;
+}
+
+.d-none{
+    display: none;
 }
 </style>

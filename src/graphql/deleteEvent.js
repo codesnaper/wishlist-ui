@@ -1,9 +1,9 @@
 const deleteEvent = `
-mutation deleteEvent($eventId:ID){
+mutation deleteEvent($eventId:ID!){
     deleteEvent(
-      _id:$eventId,
+      id:$eventId,
     ){
-      _id
+      id
     }
   }
   

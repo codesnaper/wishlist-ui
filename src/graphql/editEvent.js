@@ -1,7 +1,7 @@
 const editEvent = `
-mutation editEvent($eventId:ID, $name: String, $endDate: DateTime , $userId:String , $code:Int){
+mutation editEvent($eventId:ID!, $name: String, $endDate: String , $userId:String , $code:Int){
     updateEvent(
-      _id:$eventId,
+      id:$eventId,
       name:$name,
       endDate:$endDate,
       organiserid:$userId,
