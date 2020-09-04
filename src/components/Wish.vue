@@ -21,7 +21,7 @@
           <v-col
           v-for="card in cards"
           :key="card.title"
-          cols="4" md="6" sm="12" style="margin-bottom:40px;"
+          lg="6" sm="12" xl="4" xs="12" id="col-removal" style="margin-bottom:40px;"
         >
             <v-card class="card-image" ripple elevation ="24">
                 <v-card-title v-text="card.wish" >
@@ -118,7 +118,7 @@
               </v-card-text>
             </v-card>
           </v-col>
-        <v-col cols="4" md="6" sm="12">
+        <v-col cols="12" lg="6" xl="4" md="6" sm="12">
             <v-card class="card-image" ripple elevation ="24">
               <v-card-title v-text="'Create New Wish'" ></v-card-title>
               <v-card-text @click="addWish" v-if="!this.cardAddInput" style="text-align:center; cursor:pointer;">
@@ -335,7 +335,7 @@ import { graphQL } from "./../awsConfig/garphql";
 .card-image{
     background: url("./../assets/Card.png");
     background-repeat: no-repeat;
-    background-size: 100% auto;
+    background-size: 100% 100%;
     height: 370px;
     border-top-right-radius: 82px;
     border-bottom-right-radius: 80px;

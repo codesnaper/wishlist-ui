@@ -97,6 +97,8 @@
 
 <script>
 import { Auth } from "aws-amplify";
+import { graphQL } from '../awsConfig/garphql';
+import { editUserGrahql,editUserParam } from '../graphql/editUser';
 export default {
   name: 'Login',
   computed: {
@@ -148,9 +150,12 @@ export default {
         }).then(data=>{
             console.log(JSON.stringify(data));
             document.getElementById('success').classList.remove('d-none');
-            // Auth.confirmSignUp(this.email).then(()=>{
-                
-            // })
+            let variables =  editUserParam(data.userSub,this.firstName+' '+this.lastName,'',this.email);
+            graphQL(editUserGrahql,variables,undefined,undefined,process.env.VUE_APP_GRAPHQL_API_KEY,process.env.VUE_APP_GRAPHQL_OPEN_URL)
+            .then(response => response.json())
+            .then(data=>{
+              console.log(data);
+            }).catch(err=>console.log(err));
             this.successMessage = "Welcome. You are successfully regstered with us."
             document.getElementById('registerButton').classList.remove('d-none');
             document.getElementById('registerLoader').classList.add('d-none');

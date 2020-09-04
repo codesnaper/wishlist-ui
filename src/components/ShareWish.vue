@@ -74,9 +74,7 @@
                                         <v-col cols="12">
                                             <v-text-field v-model="contribution.name" label="Name"></v-text-field>
                                         </v-col>
-                                        <v-col cols="12">
-                                            <v-text-field v-model="contribution.contact" label="Contact"></v-text-field>
-                                        </v-col>
+                                        
                                         <v-col cols="12">
                                             <v-text-field v-model="contribution.email" label="Email"></v-text-field>
                                         </v-col>
@@ -150,6 +148,8 @@
 </template>
 
 <script>
+import { graphQL } from "./../awsConfig/garphql";
+import { Auth } from "aws-amplify";
 import {grahql} from './../graphql/event';
 import {addUser, parameter} from './../graphql/addUser';
 import {addContributionGraphql, contributionParameter} from './../graphql/addContribution';
@@ -231,8 +231,7 @@ import {addContributionGraphql, contributionParameter} from './../graphql/addCon
         cookieUser.name= this.contribution.name;
         cookieUser.contact = this.contribution.contact;
         cookieUser.email = this.contribution.email;
-        cookieUser.password = '';
-        cookieUser.isExternal = true;
+        
         if(this.$cookie.get('anonymousUser')){
             let user  = JSON.parse(this.$cookie.get('anonymousUser'));
             if(user.name === this.contribution.name && user.contact === this.contribution.contact && user.email === this.contribution.email){
@@ -249,43 +248,29 @@ import {addContributionGraphql, contributionParameter} from './../graphql/addCon
         participant.userId=cookieUser.id;
         participant.wishId = this.contribution.id;
         participant.amount = this.contribution.amount;
-        let bodyData = {query:addContributionGraphql,variables:   contributionParameter(cookieUser.id,this.getUserSliderAmount(participant.amount),participant.wishId)};
-        fetch('http://localhost:3000/graphql', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json;charset=utf-8'
-            },
-            body: JSON.stringify(bodyData)
-        })
+        let variable =    contributionParameter(cookieUser.id,this.getUserSliderAmount(participant.amount),participant.wishId);
+        graphQL(addContributionGraphql,variable,undefined,undefined,process.env.VUE_APP_GRAPHQL_API_KEY,process.env.VUE_APP_GRAPHQL_OPEN_URL)
         .then(response => response.json())
         .then(data => {
            console.log(JSON.stringify(data));
+           this.initialize();
            this.dialog = false;
         });
         
     },
      saveUser:async function(user){
-         let bodyData = {query:addUser,variables: parameter(user.name,user.contact,user.email,false,'')  };
-        await fetch('http://localhost:3000/graphql', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json;charset=utf-8'
-            },
-            body: JSON.stringify(bodyData)
-        })
+         let variables =  parameter(user.name,user.contact,user.email);
+         graphQL(addUser,variables,undefined,undefined,process.env.VUE_APP_GRAPHQL_API_KEY,process.env.VUE_APP_GRAPHQL_OPEN_URL)
         .then(response => response.json())
-        .then(data => {
-            this.$cookie.set('anonymousUser', JSON.stringify(data.data.createUser), { expires: '1h', domain: 'localhost' });
+        .then(data=>{
+            this.$cookie.set('anonymousUser', JSON.stringify(data.data.createUser), { expires: '1Y'});
         });
-    }
     },
 
-    created(){
-        this.accessCode = this.$route.query.accessCode;
-        this.eventID = this.$route.query.id;
+    initialize: function(){
         if(this.eventID){
             let variable = {_id:this.eventID};
-            fetch('http://localhost:3000/graphql?query='+grahql+'&variables='+JSON.stringify(variable))
+            graphQL(grahql,variable,undefined,undefined,process.env.VUE_APP_GRAPHQL_API_KEY,process.env.VUE_APP_GRAPHQL_OPEN_URL)
             .then(response => response.json())
             .then(data=>{
                 this.eventName = data.data.event.name;
@@ -304,7 +289,26 @@ import {addContributionGraphql, contributionParameter} from './../graphql/addCon
             .catch(err=>{
                 console.error(err)
                 this.expiryLink = true;
-            })       
+            })  
+        }
+    }
+    },
+
+    created(){
+         Auth.currentAuthenticatedUser()
+         .then(data=>{
+            let cookieUser = {};
+            cookieUser.name= data.attributes.name;
+            cookieUser.contact = "";
+            cookieUser.email = data.attributes.email;
+            cookieUser.id = data.attributes.sub;
+            this.$cookie.set('anonymousUser', JSON.stringify(cookieUser), { expires: '1Y'});
+        }).catch(err=>console.error(err));
+
+        this.accessCode = this.$route.query.accessCode;
+        this.eventID = this.$route.query.id;
+        if(this.eventID){
+            this.initialize();    
         } else{
             this.expiryLink = true;
         }
